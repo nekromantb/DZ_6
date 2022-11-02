@@ -45,9 +45,9 @@ class Student:
         print(f"Имя: {self.name}")
         print(f"Фамилия: {self.surname}")
         print(f"Средняя оценка за домашние задания: {round(average_rating(self.grades), 1)}")
-        if self.courses_in_progress is None:
+        if self.courses_in_progress is not None:
             print(f"Курсы в процессе изучения: ", *self.courses_in_progress)
-        if self.finished_courses is None:
+        if self.finished_courses is not None:
             print(f"Завершенные курсы: ", *self.finished_courses)
         return ""
 
