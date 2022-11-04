@@ -1,24 +1,3 @@
-def average_rating(dictionary) -> float:
-    sum_marks = 0
-    marks_quantity = 0
-    for course in dictionary:
-        for mark in dictionary[course]:
-            sum_marks += mark
-            marks_quantity += 1
-    return sum_marks / marks_quantity
-
-
-def compare_grades(dictionary_self, dictionary_other) -> int:
-    self_ave_grade = average_rating(dictionary_self)
-    other_ave_grade = average_rating(dictionary_other)
-    if self_ave_grade > other_ave_grade:
-        return 1
-    elif self_ave_grade == other_ave_grade:
-        return 0
-    else:
-        return -1
-
-
 class Student:
     def __init__(self, name, surname, gender):
         self.name = name
@@ -28,32 +7,49 @@ class Student:
         self.courses_in_progress = []
         self.grades = {}
 
+    def _average_student_rating(self) -> float:
+        if not self.grades:
+            return 0
+        marks = []
+        for mark in self.grades.values():
+            marks.extend(mark)
+        return sum(marks) / len(marks)
+
     def add_courses(self, course_name):
         self.finished_courses.append(course_name)
 
     def rate_lecturer(self, lecturer, course, grade):
         if isinstance(lecturer, Lecturer) and (course in self.courses_in_progress or course in self.finished_courses) \
                 and course in lecturer.courses_attached:
-            if course in lecturer.grades_from_students:
-                lecturer.grades_from_students[course] += [grade]
+            if course in lecturer.grades:
+                lecturer.grades[course] += [grade]
             else:
-                lecturer.grades_from_students[course] = [grade]
+                lecturer.grades[course] = [grade]
         else:
             return 'Ошибка'
 
     def __str__(self):
-        print(f"Имя: {self.name}")
-        print(f"Фамилия: {self.surname}")
-        print(f"Средняя оценка за домашние задания: {round(average_rating(self.grades), 1)}")
-        if self.courses_in_progress is not None:
-            print(f"Курсы в процессе изучения: ", *self.courses_in_progress)
-        if self.finished_courses is not None:
-            print(f"Завершенные курсы: ", *self.finished_courses)
-        return ""
+        return f"""Имя: {self.name}
+            \rФамилия: {self.surname}
+            \rСредняя оценка за домашние задания: {round(self._average_student_rating(), 1)}
+            \rКурсы в процессе изучения: {', '.join(self.courses_in_progress)}
+            \rЗавершенные курсы: {', '.join(self.finished_courses)}
+        """
 
-    def __cmp__(self, other):
-        if isinstance(other, Student):
-            return compare_grades(self.grades, other.grades)
+    def __eq__(self, other):
+        if not isinstance(other, Student):
+            raise Exception('wrong input')
+        return self._average_student_rating() == other._average_student_rating()
+
+    def __lt__(self, other):
+        if not isinstance(other, Student):
+            raise Exception('wrong input')
+        return self._average_student_rating() < other._average_student_rating()
+
+    def __le__(self, other):
+        if not isinstance(other, Student):
+            raise Exception('wrong input')
+        return self._average_student_rating() <= other._average_student_rating()
 
 
 class Mentor:
@@ -64,17 +60,38 @@ class Mentor:
 
 
 class Lecturer(Mentor):
-    grades_from_students = {}
+    def __init__(self, name, surname):
+        super().__init__(name, surname)
+        self.grades = {}
+
+    def _average_lecturer_rating(self) -> float:
+        if not self.grades:
+            return 0
+        marks = []
+        for mark in self.grades.values():
+            marks.extend(mark)
+        return sum(marks) / len(marks)
 
     def __str__(self):
-        print(f"Имя: {self.name}")
-        print(f"Фамилия: {self.surname}")
-        print(f"Средняя оценка за лекции: {round(average_rating(self.grades_from_students), 1)}")
-        return ""
+        return f"""Имя: {self.name}
+            \rФамилия: {self.surname}
+            \rСредняя оценка за лекции: {round(self._average_lecturer_rating(), 1)}
+        """
 
-    def __cmp__(self, other):
-        if isinstance(other, Lecturer):
-            return compare_grades(self.grades_from_students, other.grades_from_students)
+    def __eq__(self, other):
+        if not isinstance(other, Lecturer):
+            raise Exception('wrong input')
+        return self._average_lecturer_rating() == other._average_lecturer_rating()
+
+    def __lt__(self, other):
+        if not isinstance(other, Lecturer):
+            raise Exception('wrong input')
+        return self._average_lecturer_rating() < other._average_lecturer_rating()
+
+    def __le__(self, other):
+        if not isinstance(other, Lecturer):
+            raise Exception('wrong input')
+        return self._average_lecturer_rating() <= other._average_lecturer_rating()
 
 
 class Reviewer(Mentor):
@@ -88,44 +105,22 @@ class Reviewer(Mentor):
             return 'Ошибка'
 
     def __str__(self):
-        print(f"Имя: {self.name}")
-        print(f"Фамилия: {self.surname}")
-        return ""
+        return f"""Имя: {self.name}
+            \rФамилия: {self.surname}
+        """
 
 
-def average_students_rating_by_course(students, course):
-    average_ratings_student = 0
-    sum_students = 0
-    if students is not None:
-        for student in students:
-            if student.grades.get(course) is not None:
-                sum_rating = 0
-                quantity_ratings = 0
-                for rate in student.grades.get(course):
-                    sum_rating += rate
-                    quantity_ratings += 1
-                average_ratings_student += sum_rating / quantity_ratings
-                sum_students += 1
-        if sum_students != 0:
-            return average_ratings_student / sum_students
-    return -1
+def average_rating_by_course(persons_list, course):
+    if not isinstance(persons_list, list):
+        return "wrong input - not a list"
+    ratings = []
+    for person in persons_list:
+        ratings.extend(person.grades.get(course, []))
+    if not ratings:
+        return "no marks on this course"
+    return round (sum(ratings) / len(ratings), 2)
 
 
-def average_lecturer_rating_by_course(lecturers, course):
-    sum_rating = 0
-    quantity_ratings = 0
-    average_ratings_lecturer = 0
-    sum_lecturers = 0
-    for lecturer in lecturers:
-        for rate in lecturer.grades_from_students.get(course):
-            sum_rating += rate
-            quantity_ratings += 1
-        if quantity_ratings != 0:
-            average_ratings_lecturer += sum_rating / quantity_ratings
-            sum_lecturers += 1
-    if sum_lecturers != 0:
-        return average_ratings_lecturer / sum_lecturers
-    return -1
 
 
 students_list = []
@@ -175,5 +170,5 @@ print(cool_lecturer_2)
 print(cool_reviewer)
 print(ave_reviewer)
 
-print(average_students_rating_by_course(students_list, 'Python'))
-print(average_lecturer_rating_by_course(lecturers_list, 'Dancing with a tambourine'))
+print(average_rating_by_course(students_list, 'Python'))
+print(average_rating_by_course(lecturers_list, 'Dancing with a tambourine'))
